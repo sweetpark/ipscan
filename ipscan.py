@@ -9,7 +9,7 @@ import sys
 PingResponse = {}
 Running:bool
 Result=[]
-find_not_ip=["no ip scanned"]
+find_not_ip=[]
 scan_error='ipscan fail'
 
 
@@ -77,13 +77,13 @@ def PingListenThread():
 
 
 
-def xmlSend(result):
-
+def xmlSend(time,result):
     count=len(result)
 
     filename='ipscanResult.xml'
 
     root=Element('root')
+    time=SubElement(root,'TIME').text=time
     ipscan=SubElement(root,'IPSCAN')
     ipscan.attrib["ResultCount"]=str(count)
     
@@ -97,6 +97,7 @@ def xmlSend(result):
 
     with open(filename, "wb") as file:
         tree.write(file, encoding='UTF-8', xml_declaration=True)
+        
 
 def findIpRange(startIP, endIP):
     try:
@@ -184,7 +185,7 @@ def findOneIP(startIP):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) #ICMP 로우소켓 만들기
         sock.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1)
-            
+
         address=startIP
         prefix:int=32
         HostRange:int = Prefix2Range(prefix) # 이 대역 안에 총 몇개의 IP 가 있을 수 있는지?
@@ -243,9 +244,11 @@ def findAssignIP(ip_list):
         print(scan_error)
         quit()
 
+def Time():
+    return time.ctime()
 
 def main():
-
+    process_start_time=Time()
     try:
         if sys.argv[1]=="-r":
             findIpRange(sys.argv[2],sys.argv[3])
@@ -268,10 +271,9 @@ def main():
             Result.append(tmp)
     
     if len(Result)==0:
-        xmlSend("")
+        xmlSend(process_start_time,find_not_ip)
     else:
-        xmlSend(Result)
-
+        xmlSend(process_start_time,Result)
 
 main()
 quit()        

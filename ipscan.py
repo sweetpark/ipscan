@@ -10,7 +10,7 @@ PingResponse = {}
 Running:bool
 Result=[]
 find_not_ip=["no ip scanned"]
-scan_error=['Ipscan error']
+scan_error='ipscan fail'
 
 
 def checksum(data) -> int:
@@ -60,8 +60,7 @@ def PrintUsage():
     인자를 잘못 넣었을때 출력할 도움말
     """
     print("\nusage \n"
-          "ex  only one ip     : python3 ipscan.py -o 8.8.8.8\n"
-          "ex  subnet          : python3 ipscan.py -s 192.168.0.0 24\n"
+          "ex  subnet          : python3 ipscan.py -s 192.168.0.0/24\n"
           "ex  range           : python3 ipscan.py -r 192.168.0.0 192.168.0.20\n"
           "ex  assign range ip : python3 ipscan.py -a 192.168.0.100 192.168.3.100 192.168.0.0...\n")
 
@@ -79,13 +78,20 @@ def PingListenThread():
 
 
 def xmlSend(result):
+
+    count=len(result)
+
     filename='ipscanResult.xml'
 
     root=Element('root')
     ipscan=SubElement(root,'IPSCAN')
+    ipscan.attrib["ResultCount"]=str(count)
+    
+    if count==0:
+        SubElement(ipscan,'RESULT')
+    
     for tmp in result:
         SubElement(ipscan,'RESULT').text = tmp
-    
         
     tree=ElementTree(root)
 
@@ -128,17 +134,21 @@ def findIpRange(startIP, endIP):
 
         sock.close()
     except :
-        xmlSend(scan_error)
+        print(scan_error)
         quit()
 
 
-def findIpSubnet(startIP,subnet):
+def findIpSubnet(subnetIP):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP) #ICMP 로우소켓 만들기
         sock.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1)
-
-        address=startIP
-        prefix=int(subnet)
+        
+        tmp=subnetIP.split('/')
+        tmp_ip=tmp[0]
+        tmp_subnet=tmp[1]
+        
+        address=tmp_ip
+        prefix=int(tmp_subnet)
         HostRange:int = Prefix2Range(prefix) # 이 대역 안에 총 몇개의 IP 가 있을 수 있는지?
         if not HostRange: xmlSend(PrintUsage()); exit()
 
@@ -166,8 +176,8 @@ def findIpSubnet(startIP,subnet):
 
         sock.close()
     except:
-        xmlSend(scan_error)
-        quit()
+        print(scan_error)
+        exit()
 
 
 def findOneIP(startIP):
@@ -202,8 +212,8 @@ def findOneIP(startIP):
 
         sock.close()
     except:
-        xmlSend(scan_error)
-        quit()
+        print(scan_error)
+        exit()
 
 def findAssignIP(ip_list):
     try:
@@ -230,7 +240,7 @@ def findAssignIP(ip_list):
 
         sock.close()
     except :
-        xmlSend(scan_error)
+        print(scan_error)
         quit()
 
 
@@ -240,9 +250,7 @@ def main():
         if sys.argv[1]=="-r":
             findIpRange(sys.argv[2],sys.argv[3])
         elif sys.argv[1]=="-s":
-            findIpSubnet(sys.argv[2],sys.argv[3])
-        elif sys.argv[1]=="-o":
-            findOneIP(sys.argv[2])
+            findIpSubnet(sys.argv[2])
         elif sys.argv[1]=="-a":
             ip_list=[]
             for i in range(2,len(sys.argv)):
@@ -251,7 +259,6 @@ def main():
         else:
             quit()
     except:
-        xmlSend(scan_error)
         PrintUsage()
         exit()
 
@@ -261,7 +268,7 @@ def main():
             Result.append(tmp)
     
     if len(Result)==0:
-        xmlSend(find_not_ip)
+        xmlSend("")
     else:
         xmlSend(Result)
 

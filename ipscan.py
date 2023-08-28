@@ -60,8 +60,8 @@ def PrintUsage():
     인자를 잘못 넣었을때 출력할 도움말
     """
     print("\nusage \n"
-          "ex  subnet          : python3 ipscan.py -s 192.168.0.0/24\n"
           "ex  range           : python3 ipscan.py -r 192.168.0.0 192.168.0.20\n"
+          "ex  subnet          : python3 ipscan.py -s 192.168.3.0/24 192.168.5.0/24 ...\n"
           "ex  assign range ip : python3 ipscan.py -a 192.168.0.100 192.168.3.100 192.168.0.0...\n")
 
  
@@ -253,7 +253,8 @@ def main():
         if sys.argv[1]=="-r":
             findIpRange(sys.argv[2],sys.argv[3])
         elif sys.argv[1]=="-s":
-            findIpSubnet(sys.argv[2])
+            for i in range(2,len(sys.argv)):
+                findIpSubnet(sys.argv[i])
         elif sys.argv[1]=="-a":
             ip_list=[]
             for i in range(2,len(sys.argv)):
